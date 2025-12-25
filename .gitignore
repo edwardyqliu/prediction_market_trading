@@ -1,3 +1,5 @@
 .env
 demo_private_key.pem
 old/
+data/
+__pycache__/
