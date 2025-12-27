@@ -1,27 +1,71 @@
-# Optimal Trading for Prediction Markets (Binary Options)
+# Prediction Market Trading Algorithm
 
-**Problem**: How should you size positions when market noise varies?
+## The Challenge: State Space Explosion
+A direct Dynamic Programming formulation tracking absolute wealth `W_t` and contract counts `x_t` leads to an **unbounded state space**:
+- Wealth `W_t` can grow without bound
+- Contract counts `x_t` can be arbitrarily large
+- Result: DP table size `O(T × |W| × |x|)` with `|W|, |x| → ∞` → **computationally infeasible**
 
-**Finding**: DP reveals fundamentally different optimal policies per regime:
+## Key Innovation: Proportional Allocation
 
-1. **High noise** (uniform regime): Conservative allocation strategy - trade only extreme discounts  
-2. **Trending** (random walk regime): Moderate allocation strategy; momentum optionality - allocate past fair value
-3. **Predictable** (mean-reverting regime): Most aggressive allocation strategy, but rarely above fair value  
-4. **Transaction costs**: Create path dependence - optimal quotes depend on current inventory
-5. **Model Evaluation**: Evaluation on 100,975 unseen [Polymarket market price paths](https://www.kaggle.com/datasets/ismetsemedov/polymarket-prediction-markets/) shows most conservative policy is most robust to misspecification risk with expected wealth multiplier of [blank] and probability of 70% drawdown of [blank]
-6. **Strategy Selection Decision Boundary**: Decision boundaries derived from likelihood surfaces enable optimal strategy selection
+We show that for log utility with multiplicative returns, optimal trading depends only on the **proportion** of wealth allocated to contracts, not on absolute wealth levels. Defining:
 
-**Trading implication**: 
-* Spreads change optimal policy dramatically
-* Regime detection & confidence in current regime -> corresponding position sizing and timing
+`θ_t = (x_t × c_t) / (W_t + x_t × c_t) ∈ [-1, 1]`
 
----
-`trading_dp_outline.ipynb` - DP formulation & optimizations  
+where:
+- `θ > 0`: Net long YES contracts
+- `θ < 0`: Net long NO contracts  
+- `|θ|`: Fraction of portfolio value in contracts
 
-`trading_dp_implementation.ipynb` - Implementation & analysis
+reduces the state space from unbounded `(W, x, c)` to bounded `(θ, c)` while yielding the same optimal policy as the unbounded formulation. This is true **even in the case of asymmetric spreads for YES and NO contracts**.
 
-`trading_dp_evaluation.ipynb` - Evaluation on Polymarket data
+## Solution: Bounded Dynamic Programming
+- **Policy Matrix**: `(T, θ, c)` where θ ∈ [-1,1]
+- **Space Complexity**: $O(T*N^2)$ vs previous $O(T * \infty)$
+- **Time Complexity**: $O(T * N^3)$
+- **Realism**: Includes asymmetric spreads
 
-`data/` - Polymarket price trajectories (Kaggle)
+## Evaluation & Results
+We evaluate on 997 real [Polymarket price paths](https://www.kaggle.com/datasets/sandeepkumarfromin/full-market-data-from-polymarket) with 5% buy / 10% sell spreads (for YES and NO contracts, though they can be different in practice)
 
-`results/` - Performance metrics 
+### Strategy Robustness:
+- **Uniform regime**: Survives ±0.4 probability errors
+- **Random walk**: Tolerates ±0.2 errors with regime fit  
+- **Mean reverting**: Requires accurate probabilities AND regime
+
+### Key Finding:
+Optimal allocation & performance depends on:
+- Outcome probability estimates
+- Regime identification
+- Buy Spread / Sell Spread
+
+## Implications
+- **Traders**: Optimal position sizing with real costs
+- **Platforms**: Better AMM design using bounded inventory θ
+- **Research**: Tractable DP for prediction market equilibrium, and enables future work on trader-market maker interactions
+
+## Repository Structure
+- `trading_dp.ipynb` - DP implementation with three regimes
+- `evaluation.ipynb` - Sensitivity analysis on Polymarket data
+- `trading_dp.py` - Source code for DP functions
+- `docs/FORMULATION.md` - DP derivation & runtime analysis
+- `docs/EVALUATION.md` - Evaluation methods overview
+- `data/` - Polymarket price paths
+
+## Quick Start
+```python
+from trading_dp import run_dp, make_transition_matrix
+T = 31
+n_prices = 21
+psub = .7
+regime = make_transition_matrix(psub,.2,mean_reversion=0.8,n_prices=n_prices)
+V, policy = run_dp(model_trans=regime,
+                    p_subj=psub,
+                    T = T,
+                    gamma_b = .05,
+                    gamma_s = .10,
+                    n_theta = 51,
+                    n_b = 51,
+                    n_prices = n_prices
+                )
+```
