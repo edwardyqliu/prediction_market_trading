@@ -1,11 +1,12 @@
+# DP Formulation Overview
 ## Problem Statement
 
-Typically in prediction market binary options, for any given event/outcome with probability `c`, you can purchase like so:
+Typically in binary options, for any given event/outcome with probability `c`, you can purchase like so:
 - Buy 1 YES contract with price `c * (1 + buy spread)` that pays 1 if outcome occurs, 0 otherwise
 - Buy 1 NO contract with price `(1 - c) * (1 + buy spread)` that pays 0 if outcome occurs, 1 otherwise
 
 For vast majority of events, a resolution date is set such that the YES and NO contracts resolve at that time.
-Note that in some prediction markets you can't hold YES and NO simultaneously (buy NO = sell existing YES and vice versa).
+Note that in some you can't hold YES and NO simultaneously (buy NO = sell existing YES and vice versa).
 
 Once contracts are owned, they can also be sold:
 - Sell 1 YES contract with price `c * (1 - sell spread)`
@@ -119,9 +120,21 @@ $$\theta_{t+1} =
          {W_t/P_{t,end} + x_t(1-c_{t+1})/P_{t,end}}$$
 $$\theta_{t+1} = 
     \frac{b'_t * R_{\text{NO},t}} 
-         {(1-b'_t) + b'_t * R_{\text{NO},t}}$$
+         {(1+b'_t) - b'_t * R_{\text{NO},t}}$$
+
+## Portfolio Value Update
+
+$P_{t,end} * (1-|b'_t|) = P_{t,start}*(1-|\theta_t|)*(\frac{W_t}{W_{t-1}})$
+
+$\frac{P_{t,end}}{P_{t,start}}=\frac{(1-|\theta_t|) * \frac{W_t}{W_{t-1}}}{1-|b'_t|}$
 
 ## Wealth Update (with Spread):
+Let $\Beta=\frac{b'_t}{1-|b'_t|},~~~\Theta=\frac{\theta_t}{1-|\theta_t|},~~~y=\frac{W_t}{W_{t-1}}$.
+
+And note that
+
+$b_t = (\frac{b'_t}{1-|b'_t|})(1-|\theta_t|)(\frac{W_t}{W_{t-1}})$.
+
 **Case 1:** 
 
 $x_t ≥ x_{t-1}, ~ x_{t-1} < 0, ~ x_t < 0$
@@ -130,6 +143,9 @@ We sell $x_t - x_{t-1}$ NO contracts
     $$W_t = W_{t-1} + (x_t - x_{t-1})(1-c_t)(1-\gamma_{NO,s})$$
     $$W_t = W_{t-1} + \frac{W_{t-1}}{1-|\theta_t|} *(b_t - \theta_t)* (1-\gamma_{NO,s})$$
     $$W_t = W_{t-1} * (1 + \frac{b_t - \theta_t}{1 - |\theta_t|} * (1-\gamma_{NO,s}))$$
+    $$y=1+(\Beta y-\Theta)*(1-\gamma_{NO,s})$$
+    $$y-y \Beta(1-\gamma_{NO,s})=1-\Theta(1-\gamma_{NO,s})$$
+    $$y=\frac{1-\Theta(1-\gamma_{NO,s})}{1-\Beta(1-\gamma_{NO,s})}$$
 
 **Case 2:** 
 
@@ -139,6 +155,9 @@ We sell $x_{t-1}$ NO contracts and buy $x_t$ YES contracts
     $$W_t = W_{t-1} - x_{t-1}(1-c_t)(1-\gamma_{NO,s}) - x_tc_t(1+\gamma_{\text{YES},b})$$
     $$W_t = W_{t-1} - \frac{W_{t-1}}{1-|\theta_t|}*\theta_t*(1-\gamma_{NO,s}) - \frac{W_{t-1}}{1-|\theta_t|}*b_t*(1 + \gamma_{\text{YES},b})$$
     $$W_t = W_{t-1}(1-\frac{\theta_t (1-\gamma_{NO,s}) + b_t(1+\gamma_{\text{YES,b}})}{1-|\theta_t|})$$
+    $$y=1-\Theta(1-\gamma_{NO,s})-\Beta y(1+\gamma_{\text{YES},b})$$
+    $$y(1+B(1-\gamma_{\text{YES},b}))=1-\Theta(1-\gamma_{NO,s})$$
+    $$y=\frac{1-\Theta(1-\gamma_{NO,s})}{1+\Beta(1+\gamma_{\text{YES},b})}$$
 
 **Case 3:** 
 
@@ -148,6 +167,8 @@ We buy $x_t - x_{t-1}$ YES contracts
     $$W_t = W_{t-1} - (x_t - x_{t-1})(c_t)(1+\gamma_{\text{YES},b})$$
     $$W_t = W_{t-1} - \frac{W_{t-1}}{1-|\theta_t|} *(b_t - \theta_t) * (1+\gamma_{\text{YES},b})$$
     $$W_t = W_{t-1} * (1 - \frac{b_t - \theta_t}{1 - |\theta_t|} * (1+\gamma_{\text{YES},b}))$$
+    $$y=1-(\Beta y - \Theta)*(1+\gamma_{\text{YES},b})$$
+    $$y=\frac{1+\Theta(1+\gamma_{\text{YES},b})}{1+\Beta(1+\gamma_{\text{YES},b})}$$
 
 **Case 4:** 
 
@@ -158,6 +179,10 @@ We sell $-(x_t - x_{t-1})$ YES contracts
     $$W_t = W_{t-1} - \frac{W_{t-1}}{1-|\theta_t|} *(b_t - \theta_t) * (1-\gamma_{\text{YES},s})$$
     $$W_t = W_{t-1} * (1 - \frac{b_t - \theta_t}{1 - |\theta_t|} * (1-\gamma_{\text{YES},s}))$$
 
+By symmetry to Case 3:
+
+$$y=\frac{1+\Theta(1-\gamma_{\text{YES},s})}{1+\Beta(1-\gamma_{\text{YES},s})}$$
+
 **Case 5:** 
 
 $x_t < x_{t-1}, ~ x_{t-1} ≥ 0, ~ x_t < 0$
@@ -165,7 +190,10 @@ $x_t < x_{t-1}, ~ x_{t-1} ≥ 0, ~ x_t < 0$
 We sell $x_{t-1}$ YES contracts and buy $x_t$ NO contracts
     $$W_t = W_{t-1} + x_{t-1}(c_t)(1-\gamma_{\text{YES},s}) + x_t(1-c_t)(1+\gamma_{NO,b})$$
     $$W_t = W_{t-1} + \frac{W_{t-1}}{1-|\theta_t|}*\theta_t*(1-\gamma_{\text{YES},s}) + \frac{W_{t-1}}{1-|\theta_t|}*b_t*(1 + \gamma_{NO,b})$$
-    $$W_t = W_{t-1}(1+\frac{\theta_t (1-\gamma_{\text{YES},s}) + b_t(1+\gamma_{NO,t})}{1-|\theta_t|})$$
+    $$W_t = W_{t-1} * (1+\frac{\theta_t (1-\gamma_{\text{YES},s}) + b_t(1+\gamma_{NO,b})}{1-|\theta_t|})$$
+    $$y=1+\Theta(1-\gamma_{\text{YES,s}})+\Beta y(1+\gamma_{NO,b})$$
+    $$y=\frac{1+\Theta(1-\gamma_{\text{YES},s})}{1-\Beta(1+\gamma_{NO,b})}$$
+    
 
 **Case 6:** 
 
@@ -176,13 +204,14 @@ We buy $-(x_t - x_{t-1})$ NO contracts
     $$W_t = W_{t-1} + \frac{W_{t-1}}{1-|\theta_t|} *(b_t - \theta_t)* (1+\gamma_{NO,b})$$
     $$W_t = W_{t-1} * (1 + \frac{b_t - \theta_t}{1 - |\theta_t|} * (1+\gamma_{NO,b}))$$
 
-## Portfolio Value Update
+By symmetry to Case 1:
+    $$y=\frac{1-\Theta(1+\gamma_{NO,b})}{1-\Beta(1+\gamma_{NO,b})}$$
 
-$P_{t,end} = P_{t,start}*[(1-|\theta_t|)(\frac{W_t}{W_{t-1}}) + |b_t|]$
-
-Since we have found $\frac{W_t}{W_{t-1}}$ in terms of $\theta_t$ and $b_t$, not $W_t$ and $x_t$, we have $\frac{P_{t,end}}{P_{t,start}}$ in terms of $\theta_t$ and $b_t$ as well.
-
-Since we have $\frac{P_{t,end}}{P_{t,start}}$, we can also find $b'_t$ in terms of $\theta_t$ and $b_t$.
+Note: $\Theta$ and $\Beta$ can be thought of as starting and ending coverage ratio (contract value / cash wealth value). More generally we have:
+$$y=\frac{1+|\Theta|(1+\gamma_{\Theta})}{1+|B|(1+\gamma_{\Beta})}$$ 
+or
+$$y=\frac{\frac{1}{1+\gamma_{\Theta}}+|\Theta|}{\frac{1}{1+\gamma_{\Beta}}+|\Beta|}$$
+where $\gamma$ is positive if buying and negative if selling. So long as $|\Theta|,|\Beta| \in[0,\infty)$ and $\gamma \in (-1,1)$, $y$ is always positive ($W_t$ will never flip negative).
 
 ## Recursion Step
 At each $t \in [0..T]$,
@@ -192,10 +221,8 @@ Where $v_t(\theta_t,c_t)$ is the growth function of log wealth between the start
 $$V_{t+1} = log(W_t) + v_{t+1}(\theta_{t+1}, c_{t+1})$$
 
 Recursion Step (Bellman Equation):
-$$V_{t+1} = log(W_{t-1}) + \max_{b_t' \in[-1,1]}\mathbb{E_{c_t|c_{t-1}}}[log(\frac{W_t}{W_{t-1}})+v_{t+1}(\theta_{t+1},c_{t+1})]$$
-$$v_t(\theta_t, c_t) = \max_{b_t' \in[-1,1]}\mathbb{E_{c_t|c_{t-1}}}[log(\frac{W_t}{W_{t-1}}) + v_{t+1}(\theta_{t+1}, c_{t+1})]$$
-
-Note that we can express $b'_t$, $\frac{W_t}{W_{t-1}}$, $\theta_{t+1}$, and $c_{t+1}$ in terms of $\theta$, $b$ and $c$. 
+$$V_{t+1} = log(W_{t-1}) + \max_{b'_t \in[-1,1]}\mathbb{E_{c_t|c_{t-1}}}[log(y)+v_{t+1}(\theta_{t+1},c_{t+1})]$$
+$$v_t(\theta_t, c_t) = \max_{b'_t \in[-1,1]}\mathbb{E_{c_t|c_{t-1}}}[log(y) + v_{t+1}(\theta_{t+1}, c_{t+1})]$$
 
 ## Runtime Analysis
 ### Space Complexity
@@ -213,13 +240,13 @@ which makes the problem tractable. Note that this is with a full price transitio
 ### Optimized Implementation
 We observe that the expectation term $\mathbb{E}_{c_{t+1}|c_t}[v_{t+1}(\theta_{t+1}, c_{t+1})]$ depends on $b'_t$ and $c_t$ but **not on $\theta_t$**. This enables factorization:
 
-**Precompute expectations**: For all $(b, c_t)$ pairs, compute:
-   $$F(b, c_t) = \mathbb{E}_{c_{t+1}|c_t}[v_{t+1}(\theta_{t+1}(b, c_t, c_{t+1}), c_{t+1})]$$
+**Precompute expectations**: For all $(b'_t, c_t)$ pairs, compute:
+   $$F(b'_t, c_t) = \mathbb{E}_{c_{t+1}|c_t}[v_{t+1}(\theta_{t+1}(b'_t, c_t, c_{t+1}), c_{t+1})]$$
    Complexity: $O(N_b × N_c × N_c) = O(N^3)$
 
 **Optimize allocations**: For all $(\theta_t, c_t)$ pairs:
-   $$v_t(\theta_t, c_t) = \max_{b'} [\log(W_t/W_{t-1})(\theta_t, b, c_t) + F(b, c_t)]$$
-   Complexity: $O(N_\theta × N_c × N_b) = O(N^3)$
+   $$v_t(\theta_t, c_t) = \max_{b'} [\log(y_t(\theta_t, b'_t)) + F(b'_t, c_t)]$$
+   Complexity: $O(N_\theta × N_b) = O(N^2)$
 
 Total per time step: $O(N^3)$, giving overall complexity of:
 
