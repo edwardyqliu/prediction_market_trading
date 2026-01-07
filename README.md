@@ -92,7 +92,9 @@ results = trading_dp.simulate_trading(policy,
 results
 ```
 
-## Visualizations
+## Policy Visualizations
+See further analysis in `trading_dp.ipynb`
+
 ![Policy Heatmap Uniform Regime](visualizations/policy_uniform.png)
 
 ![Policy Heatmap Random Walk](visualizations/policy_rw.png)
