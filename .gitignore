@@ -1,3 +1,5 @@
 .env
 data/
 __pycache__/
+docs/EVALUATION.md
+README.md
