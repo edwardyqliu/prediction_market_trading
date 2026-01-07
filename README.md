@@ -91,3 +91,12 @@ results = trading_dp.simulate_trading(policy,
                                       n_jobs=-1)
 results
 ```
+
+## Visualizations
+![Policy Heatmap Uniform Regime](visualizations/policy_uniform.png)
+
+![Policy Heatmap Random Walk](visualizations/policy_rw.png)
+
+![Policy Heatmap Mean Reverting](visualizations/policy_mr.png)
+
+![Policy Heatmap No Spread](visualizations/policy_mr_nospread.png)

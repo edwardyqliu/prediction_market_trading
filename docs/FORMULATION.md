@@ -212,7 +212,9 @@ We buy $-(x_t - x_{t-1})$ NO contracts
 By symmetry to Case 1:
     $$y=\frac{1-\Theta(1+\gamma_{NO,b})}{1-\Beta(1+\gamma_{NO,b})}$$
 
-Note: $\Theta$ and $\Beta$ can be thought of as starting and ending coverage ratio (contract value / cash wealth value). More generally we have:
+Note: $\Theta$ and $\Beta$ can be thought of as starting and ending coverage ratio (contract value / cash wealth value). 
+
+More generally we have:
 $$y=\frac{1+|\Theta|(1+\gamma_{\Theta})}{1+|B|(1+\gamma_{\Beta})}$$ 
 or
 $$y=\frac{\frac{1}{1+\gamma_{\Theta}}+|\Theta|}{\frac{1}{1+\gamma_{\Beta}}+|\Beta|}$$
