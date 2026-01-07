@@ -215,8 +215,11 @@ By symmetry to Case 1:
 Note: $\Theta$ and $\Beta$ can be thought of as starting and ending coverage ratio (contract value / cash wealth value). 
 
 More generally we have:
-$$y=\frac{1+|\Theta|(1+\gamma_{\Theta})}{1+|B|(1+\gamma_{\Beta})}$$ 
+
+$$y=\frac{1+|\Theta|(1+\gamma_{\Theta})}{1+|\Beta|(1+\gamma_{\Beta})}$$
+
 or
+
 $$y=\frac{\frac{1}{1+\gamma_{\Theta}}+|\Theta|}{\frac{1}{1+\gamma_{\Beta}}+|\Beta|}$$
 where $\gamma$ is positive if buying and negative if selling. So long as $|\Theta|,|\Beta| \in[0,\infty)$ and $\gamma \in (-1,1)$, $y$ is always positive ($W_t$ will never flip negative).
 
