@@ -1,7 +1,7 @@
 # DP Formulation Overview
 ## Problem Statement
 
-Typically in binary options, for any given event/outcome with probability `c`, you can purchase like so:
+Typically in prediction market binary options, for any given event/outcome with probability `c`, you can purchase like so:
 - Buy 1 YES contract with price `c * (1 + buy spread)` that pays 1 if outcome occurs, 0 otherwise
 - Buy 1 NO contract with price `(1 - c) * (1 + buy spread)` that pays 0 if outcome occurs, 1 otherwise
 
@@ -121,6 +121,11 @@ $$\theta_{t+1} =
 $$\theta_{t+1} = 
     \frac{b'_t * R_{\text{NO},t}} 
          {(1+b'_t) - b'_t * R_{\text{NO},t}}$$
+
+**More Generally:**
+$$\theta_{t+1} = 
+    \frac{b'_t * R_{\text{NO},t}} 
+         {(1-|b'_t|) + |b'_t| * R_{\text{NO},t}}$$
 
 ## Portfolio Value Update
 

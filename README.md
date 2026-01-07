@@ -1,4 +1,4 @@
-# Prediction Market Trading Algorithm
+# Prediction Market Trading Algorithms
 
 ## The Challenge: State Space Explosion
 A direct Dynamic Programming formulation tracking absolute wealth `W_t` and contract counts `x_t` leads to an **unbounded state space**:
@@ -26,12 +26,12 @@ reduces the state space from unbounded `(W, x, c)` to bounded `(θ, c)` while yi
 - **Realism**: Includes asymmetric spreads
 
 ## Evaluation & Results
-We evaluate on 997 real [Polymarket price paths](https://www.kaggle.com/datasets/sandeepkumarfromin/full-market-data-from-polymarket) with 5% buy / 10% sell spreads (for YES and NO contracts, though they can be different in practice)
+We evaluate on 453 real [Polymarket price paths](https://www.kaggle.com/datasets/sandeepkumarfromin/full-market-data-from-polymarket) with 5% buy / 10% sell spreads (for YES and NO contracts, though they can be different in practice)
 
 ### Strategy Robustness:
-- **Uniform regime**: Survives ±0.4 probability errors
-- **Random walk**: Tolerates ±0.2 errors with regime fit  
-- **Mean reverting**: Requires accurate probabilities AND regime
+- **Uniform regime**
+- **Random walk**
+- **Mean reverting**
 
 ### Key Finding:
 Optimal allocation & performance depends on:
@@ -40,13 +40,13 @@ Optimal allocation & performance depends on:
 - Buy Spread / Sell Spread
 
 ## Implications
-- **Traders**: Optimal position sizing with real costs
-- **Platforms**: Better AMM design using bounded inventory θ
-- **Research**: Tractable DP for prediction market equilibrium, and enables future work on trader-market maker interactions
+- **Traders**: Optimal position sizing with real market spreads
+- **Platforms**: Better AMM design using bounded inventory $\theta$
+- **Research**: Tractable DP for prediction market equilibrium, future work on trader-market maker interactions, insider identification
 
 ## Repository Structure
-- `trading_dp.ipynb` - DP implementation with three regimes
-- `evaluation.ipynb` - Sensitivity analysis on Polymarket data
+- `trading_dp.ipynb` - DP implementation with three regimes & policy analysis
+- `evaluation.ipynb` - Evaluation on Polymarket data
 - `trading_dp.py` - Source code for DP functions
 - `docs/FORMULATION.md` - DP derivation & runtime analysis
 - `docs/EVALUATION.md` - Evaluation methods overview
@@ -54,18 +54,40 @@ Optimal allocation & performance depends on:
 
 ## Quick Start
 ```python
-from trading_dp import run_dp, make_transition_matrix
-T = 31
-n_prices = 21
-psub = .7
-regime = make_transition_matrix(psub,.2,mean_reversion=0.8,n_prices=n_prices)
-V, policy = run_dp(model_trans=regime,
-                    p_subj=psub,
-                    T = T,
-                    gamma_b = .05,
-                    gamma_s = .10,
-                    n_theta = 51,
-                    n_b = 51,
-                    n_prices = n_prices
-                )
+from trading_dp import make_transition_matrix, get_theta_bounds, TradingDP
+
+# Make Transition Matrix 
+regime_trans = make_transition_matrix(fair_value=p_subj, volatility = 1, mean_reversion = 0.5, n_prices=N_PRICES)
+
+# Initialize TradingDP
+trading_dp = TradingDP(n_prices=N_PRICES, 
+                       n_b_tick=N_B_TICK, 
+                       n_theta=N_THETA, 
+                       C_MIN=C_MIN, 
+                       C_MAX=C_MAX,
+                       B_TICK_MIN=B_TICK_MIN, 
+                       B_TICK_MAX=B_TICK_MAX, 
+                       THETA_MIN=THETA_MIN, 
+                       THETA_MAX=THETA_MAX)
+
+# Create DP Policy
+V, policy = trading_dp.run_dp(regime_trans, 
+                                p_subj, 
+                                gamma_yes_b=GAMMA_YES_B,
+                                gamma_yes_s=GAMMA_YES_S,
+                                gamma_no_b=GAMMA_NO_B,
+                                gamma_no_s=GAMMA_NO_S,
+                                T=T_MAX)
+
+# Backtest results
+results = trading_dp.simulate_trading(policy, 
+                                      polymarket_paths, 
+                                      T_MAX = T,
+                                      gamma_yes_b=.05,
+                                      gamma_yes_s=.10,
+                                      gamma_no_b=.05,
+                                      gamma_no_s=.10,
+                                      debug=False, 
+                                      n_jobs=-1)
+results
 ```
